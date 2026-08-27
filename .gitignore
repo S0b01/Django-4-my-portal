@@ -11,3 +11,6 @@ cache/
 #django stuff
 db.sqlite3
 media/
+
+#git
+token_La_githab
