@@ -1,22 +1,29 @@
+{# Расширяем базовый шаблон #}
 {% extends "base.html" %}
+
+{# Загружаем статику и кастомные теги #}
 {% load static %}
 {% load goods_tags %}
 
+{# Виджет корзины #}
 {% block modal_cart %}
-{% include "includes/cart_button.html" %}
-{% endblock  %}
+    {% include "includes/cart_button.html" %}
+{% endblock %}
 
-
+{# Основной контент #}
 {% block content %}
 <div class="row">
-    <!-- Форма фильтров -->
+    <!-- Форма фильтров и сортировки (выпадающее меню) -->
     <div class="dropdown mb-2">
         <button class="btn btn-secondary dropdown-toggle btn-dark" type="button" data-bs-toggle="dropdown"
             aria-expanded="false">
             Фильтры
         </button>
 
+        {# Форма отправляется на текущий URL (каталог или поиск) с GET-параметрами #}
         <form action="{% if request.GET.q %}{% url "catalog:search" %}{% else %}{% url "catalog:index" slug_url %}{% endif %}" method="get" class="dropdown-menu bg-dark" data-bs-theme="dark">
+            
+            {# Чекбокс «Товары по акции» #}
             <div class="form-check text-white mx-3">
                 <input class="form-check-input" type="checkbox" name="on_sale" id="flexCheckDefault" value="on" {% if request.GET.on_sale == 'on' %}checked{% endif %}>
                 {% if request.GET.q %}
@@ -26,7 +33,10 @@
                     Товары по акции
                 </label>
             </div>
+
             <p class="text-white mx-3 mt-3">Сортировать:</p>
+
+            {# Радиокнопки сортировки #}
             <div class="form-check text-white mx-3">
                 <input class="form-check-input" type="radio" name="order_by" id="flexRadioDefault1" value="default"
                 {% if not request.GET.order_by or request.GET.order_by == 'default' %}checked{% endif %}>
@@ -48,10 +58,12 @@
                     От дорогих к дешевым
                 </label>
             </div>
+
             <button type="submit" class="btn btn-primary mx-3 mt-3">Применить</button>
         </form>
     </div>
 
+    {# Заголовок результатов поиска #}
     {% if request.GET.q %}
     <h3 class="mt-4">Результаты поиска по запросу {{ request.GET.q }}</h3>
     {% if not goods %}
@@ -59,47 +71,60 @@
         <h2 class="mt-4">По запросу ничего не найдено</h2>
     {% endif %}
     {% endif %}
+
+    {# Цикл по товарам #}
     {% for product in goods %}
-        <!-- Карта товара -->
+        <!-- Карточка товара -->
         <div class="col-lg-4 col-md-6 p-4">
             <div class="card border-primary rounded custom-shadow">
+                {# Изображение товара – проверка и заглушка #}
                 {% if product.image %}
                     <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
                 {% else %}
+                    {# Заглушка – используем тот же файл, что и в product.html #}
                     <img src="{% static "deps/images/Not found image.png" %}" class="card-img-top" alt="...">
                 {% endif %}
+
                 <div class="card-body">
+                    {# Ссылка на детальную страницу #}
                     <a href="{% url "catalog:product" product.slug %}">
                         <p class="card-title">
+                            {# Для поиска может приходить headline (выделение) – используем автозащиту от XSS #}
                             {% autoescape off %}
                                 {% if product.headline %}
-                                {{product.headline}}
+                                {{ product.headline }}
                                 {% else %}
                                 {{ product.name }}
                                 {% endif %}
                             {% endautoescape %}
                         </p>
                     </a>
+
+                    {# Описание (сокращённое) #}
                     <p class="card-text">
                         {% autoescape off %}
                             {% if product.bodyline %}
-                            {{product.bodyline|truncatechars:100}}
+                            {{ product.bodyline|truncatechars:100 }}
                             {% else %}
                             {{ product.description|truncatechars:35 }}
                             {% endif %}
                         {% endautoescape %}
                     </p>
-                    <p class="product_id">id: {{ product.display_id }}</p>
-                    <div class="d-flex justify-content-between">
 
+                    {# ID товара (с ведущими нулями) #}
+                    <p class="product_id">id: {{ product.display_id }}</p>
+
+                    {# Блок цены и кнопки в корзину #}
+                    <div class="d-flex justify-content-between">
                         {% if product.discount %}
-                            <p><s>{{product.price}}</s> $</p>
+                            <p><s>{{ product.price }} $</s></p>
                             <p><strong>{{ product.sell_price }} $</strong></p>
                             <span class="badge bg-warning text-dark">Скидка {{ product.discount }} %</span>
                         {% else %}
                             <p><strong>{{ product.price }} $</strong></p>
                         {% endif %}
 
+                        {# Кнопка добавления в корзину (AJAX) #}
                         <a href="{% url "cart:cart_add" %}" class="btn add-to-cart"
                         data-product-id="{{ product.id }}">
                             {% csrf_token %}
@@ -111,20 +136,19 @@
             </div>
         </div>
     {% endfor %}
-
-
-
 </div>
-<!-- Пагинация -->
+
+{# Пагинация #}
 {% if goods %}
     <nav aria-label="Page navigation example">
         <ul class="pagination justify-content-center my-4">
             <div class="custom-shadow d-flex">
-
+                {# Кнопка "Назад" #}
                 <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
-                <a class="page-link" href="{% if page_obj.has_previous %}?{% change_params page=page_obj.previous_page_number %}{% else %}#{% endif %}">Назад</a>
+                    <a class="page-link" href="{% if page_obj.has_previous %}?{% change_params page=page_obj.previous_page_number %}{% else %}#{% endif %}">Назад</a>
                 </li>
 
+                {# Вывод номеров страниц (только ближайшие к текущей) #}
                 {% for page in page_obj.paginator.page_range %}
                 {% if page >= page_obj.number|add:-2 and page <= page_obj.number|add:2 %}
                     <li class="page-item {% if page_obj.number == page %} active {% endif %}">
@@ -133,7 +157,7 @@
                 {% endif %}
                 {% endfor %}
 
-
+                {# Кнопка "Следующая" #}
                 <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
                     <a class="page-link" href="{% if page_obj.has_next %}?{% change_params page=page_obj.next_page_number %}{% else %}#{% endif %}">Следующая</a>
                 </li>
@@ -141,13 +165,13 @@
         </ul>
     </nav>
 {% endif %}
-{% endblock  %}
+{% endblock %}
 
-
+{# Подвал страницы #}
 {% block footer %}
 <footer class="py-4 bg-dark">
     <div class="container">
         <p class="m-0 text-center text-white">Copyright &copy; Home Python Hub Studio 2023 - 2024</p>
     </div>
 </footer>
-{% endblock  %}
+{% endblock %}
