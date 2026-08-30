@@ -34,6 +34,21 @@
                 </label>
             </div>
 
+            {# ===== НОВЫЙ ФИЛЬТР ПО ФОРМ-ФАКТОРУ ===== #}
+            <div class="text-white mx-3 mt-3">
+                <label for="formFactorSelect" class="form-label">Форм-фактор:</label>
+                <select class="form-select bg-dark text-white" name="form_factor" id="formFactorSelect">
+                    <option value="">Все</option>
+                    <option value="1U" {% if request.GET.form_factor == '1U' %}selected{% endif %}>1U</option>
+                    <option value="2U" {% if request.GET.form_factor == '2U' %}selected{% endif %}>2U</option>
+                    <option value="3U" {% if request.GET.form_factor == '3U' %}selected{% endif %}>3U</option>
+                    <option value="4U" {% if request.GET.form_factor == '4U' %}selected{% endif %}>4U</option>
+                    <option value="5U" {% if request.GET.form_factor == '5U' %}selected{% endif %}>5U</option>
+                    <option value="OPEN_FRAME" {% if request.GET.form_factor == 'OPEN_FRAME' %}selected{% endif %}>Open Frame</option>
+                </select>
+            </div>
+            {# ===== КОНЕЦ НОВОГО ФИЛЬТРА ===== #}
+
             <p class="text-white mx-3 mt-3">Сортировать:</p>
 
             {# Радиокнопки сортировки #}
@@ -77,13 +92,9 @@
         <!-- Карточка товара -->
         <div class="col-lg-4 col-md-6 p-4">
             <div class="card border-primary rounded custom-shadow">
-                {# Изображение товара – проверка и заглушка #}
-                {% if product.image %}
-                    <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
-                {% else %}
-                    {# Заглушка – используем тот же файл, что и в product.html #}
-                    <img src="{% static "deps/images/Not found image.png" %}" class="card-img-top" alt="...">
-                {% endif %}
+                {# ===== ИСПРАВЛЕНО: одна строка через метод модели ===== #}
+                <img src="{{ product.get_image_url }}" class="card-img-top" alt="{{ product.name }}">
+                {# ===== КОНЕЦ ИСПРАВЛЕНИЯ ===== #}
 
                 <div class="card-body">
                     {# Ссылка на детальную страницу #}

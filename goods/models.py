@@ -1,8 +1,13 @@
 from django.db import models
 from django.urls import reverse
+from django.conf import settings
+from django.core.files.storage import default_storage
 
 
 class Categories(models.Model):
+    """
+    Модель "Категория" — таблица category в БД.
+    """
     name = models.CharField(max_length=150, unique=True, verbose_name='Название')
     slug = models.SlugField(max_length=200, unique=True, blank=True, null=True, verbose_name='URL')
 
@@ -17,6 +22,9 @@ class Categories(models.Model):
 
 
 class Products(models.Model):
+    """
+    Модель "Товар" — таблица product в БД.
+    """
     name = models.CharField(max_length=150, unique=True, verbose_name='Название')
     slug = models.SlugField(max_length=200, unique=True, blank=True, null=True, verbose_name='URL')
     description = models.TextField(blank=True, null=True, verbose_name='Описание')
@@ -26,6 +34,21 @@ class Products(models.Model):
     quantity = models.PositiveIntegerField(default=0, verbose_name='Количество')
     category = models.ForeignKey(to=Categories, on_delete=models.CASCADE, verbose_name='Категория')
 
+    # ---- ПОЛЕ ФОРМ-ФАКТОРА (для фильтрации) ----
+    FORM_FACTOR_CHOICES = [
+        ('1U', '1U'),
+        ('2U', '2U'),
+        ('3U', '3U'),
+        ('4U', '4U'),
+        ('5U', '5U'),
+        ('OPEN_FRAME', 'Open Frame'),
+    ]
+    form_factor = models.CharField(
+        max_length=20,
+        choices=FORM_FACTOR_CHOICES,
+        default='1U',
+        verbose_name='Форм-фактор'
+    )
 
     class Meta:
         db_table = 'product'
@@ -38,14 +61,19 @@ class Products(models.Model):
 
     def get_absolute_url(self):
         return reverse("catalog:product", kwargs={"product_slug": self.slug})
-    
 
     def display_id(self):
         return f"{self.id:05}"
 
-
     def sell_price(self):
         if self.discount:
-            return round(self.price - self.price*self.discount/100, 2)
-        
+            return round(self.price - self.price * self.discount / 100, 2)
         return self.price
+
+    def get_image_url(self):
+        """Возвращает URL изображения, если файл существует, иначе заглушку."""
+        if self.image and hasattr(self.image, 'url'):
+            if default_storage.exists(self.image.name):
+                return self.image.url
+        default_image = getattr(settings, 'DEFAULT_PRODUCT_IMAGE', 'deps/images/no_image.png')
+        return settings.STATIC_URL + default_image
