@@ -3,5 +3,9 @@ footer {
     bottom: 0;
     width: 100%;
     background-color: #343a40;
-    padding: 10px 0;
-  }
+    padding: 10px 0; /* только вертикальные отступы внутри footer */
+}
+
+section {
+    padding-bottom: 80px; /* чтобы контент не заходил под footer */
+}
